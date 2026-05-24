@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced Remote Desktop</title>
+    <title>Secure Remote Desktop</title>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: sans-serif; }
         #panel { background: #222; padding: 8px; display: flex; gap: 15px; align-items: center; color: white; position: relative; z-index: 100; }
@@ -33,20 +33,25 @@
     </div>
 
     <script>
+        // ==========================================
+        // ★【重要】Python側と同じ秘密の合言葉を入れてください
+        // ==========================================
+        const SECRET_KEY = "my_secret_desktop_password_999"; 
+
         const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/38955fda60dddd6a96b70f198c804272/raw/url.txt";
         let baseUrl = ""; 
         let currentMonitor = 1;
         let isMouseDown = false;
         let lastHoverTime = 0;
-        const HOVER_INTERVAL = 100; // ★重要: 100ミリ秒に1回だけホバー座標を送信（パンク防止）
+        const HOVER_INTERVAL = 100; // 100ミリ秒に1回ホバー座標を送信（パンク防止）
 
         async function connect() {
             try {
                 const res = await fetch(GIST_RAW + "?t=" + Math.random());
                 baseUrl = (await res.text()).trim();
                 
-                // モニター数の自動検知
-                const mRes = await fetch(baseUrl + "/monitors");
+                // モニター数の自動検知（末尾に合言葉を付与）
+                const mRes = await fetch(`${baseUrl}/monitors?key=${SECRET_KEY}`);
                 const mData = await mRes.json();
                 const select = document.getElementById("monitor-select");
                 
@@ -71,7 +76,8 @@
         function updateStream() {
             if(!baseUrl) return;
             const img = document.getElementById("stream");
-            img.src = `${baseUrl}/video_feed?monitor=${currentMonitor}&t=${Date.now()}`;
+            // 映像配信URLにも合言葉をガッチリ付与
+            img.src = `${baseUrl}/video_feed?monitor=${currentMonitor}&key=${SECRET_KEY}&t=${Date.now()}`;
         }
 
         function changeMonitor() {
@@ -79,10 +85,10 @@
             updateStream();
         }
 
-        // クリップボード同期
+        // クリップボード同期（末尾に合言葉を付与）
         async function sendClipboard() {
             const text = document.getElementById("clip-text").value;
-            await fetch(baseUrl + "/clipboard", {
+            await fetch(`${baseUrl}/clipboard?key=${SECRET_KEY}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ text: text })
             });
@@ -90,7 +96,7 @@
         }
 
         async function getClipboard() {
-            const res = await fetch(baseUrl + "/clipboard");
+            const res = await fetch(`${baseUrl}/clipboard?key=${SECRET_KEY}`);
             const data = await res.json();
             document.getElementById("clip-text").value = data.text;
             navigator.clipboard.writeText(data.text).catch(() => {});
@@ -113,7 +119,8 @@
             
             if (data.x < 0 || data.x > 1 || data.y < 0 || data.y > 1) return;
 
-            fetch(baseUrl + "/mouse", {
+            // マウス操作の通信にもすべて合言葉を付与
+            fetch(`${baseUrl}/mouse?key=${SECRET_KEY}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             }).catch(()=>{});
@@ -140,10 +147,10 @@
             }
         });
 
-        // キーボード操作
+        // キーボード操作（末尾に合言葉を付与）
         document.addEventListener('keydown', (e) => {
             if (!baseUrl || document.activeElement.id === 'clip-text') return;
-            fetch(baseUrl + "/keyboard", {
+            fetch(`${baseUrl}/keyboard?key=${SECRET_KEY}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey })
             }).catch(()=>{});
