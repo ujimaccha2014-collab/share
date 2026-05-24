@@ -33,6 +33,14 @@
     </div>
 
     <script>
+        // ブラウザを開いた瞬間にチェック！
+    const savedKey = sessionStorage.getItem("SECRET_KEY");
+    if (!savedKey) {
+        // 鍵を持っていないなら、ログイン画面へ強制転送
+        window.location.href = "login.html";
+    }
+    // 鍵があるなら、それを使う
+    const SECRET_KEY = savedKey;
 // 1. 最初はプロンプトで脳内から直接入力（ソースには1文字も残らない）
 const SECRET_KEY = prompt("秘密の合言葉（パスワード）を入力してください:");
 
