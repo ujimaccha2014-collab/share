@@ -33,58 +33,52 @@
     </div>
 
     <script>
-        // ブラウザを開いた瞬間にチェック！
-    const savedKey = sessionStorage.getItem("SECRET_KEY");
-    if (!savedKey) {
-        // 鍵を持っていないなら、ログイン画面へ強制転送
-        window.location.href = "login.html";
-    }
-    // 鍵があるなら、それを使う
-    const SECRET_KEY = savedKey;
-// 1. 最初はプロンプトで脳内から直接入力（ソースには1文字も残らない）
-const SECRET_KEY = prompt("秘密の合言葉（パスワード）を入力してください:");
-
-const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/38955fda60dddd6a96b70f198c804272/raw/url.txt";
-let baseUrl = ""; 
-let currentMonitor = 1;
-let isMouseDown = false;
-let lastHoverTime = 0;
-const HOVER_INTERVAL = 100;
-
-async function connect() {
-    try {
-        const res = await fetch(GIST_RAW + "?t=" + Math.random());
-        baseUrl = (await res.text()).trim();
+// 1. まず鍵をチェックして、なければ即ログイン画面へ
+        const savedKey = sessionStorage.getItem("SECRET_KEY");
+        if (!savedKey) {
+            window.location.href = "login.html";
+        }
+        const SECRET_KEY = savedKey; // これが唯一の宣言
         
-        // ★ここ！入力された SECRET_KEY を正確に送る
-        const mRes = await fetch(`${baseUrl}/monitors?key=${encodeURIComponent(SECRET_KEY)}`);
-        const mData = await mRes.json();
-        const select = document.getElementById("monitor-select");
-        
-        if(select.options.length <= 1) {
-            select.innerHTML = "";
-            for(let i = 1; i <= mData.count; i++) {
-                const opt = document.createElement("option");
-                opt.value = i; opt.innerText = `モニター ${i}`;
-                if(i === currentMonitor) opt.selected = true;
-                select.appendChild(opt);
+        // ★ ここにあった const SECRET_KEY = prompt(...) は削除した！
+
+        const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/38955fda60dddd6a96b70f198c804272/raw/url.txt";
+        let baseUrl = ""; 
+        let currentMonitor = 1;
+        let isMouseDown = false;
+        let lastHoverTime = 0;
+        const HOVER_INTERVAL = 100;
+
+        async function connect() {
+            try {
+                const res = await fetch(GIST_RAW + "?t=" + Math.random());
+                baseUrl = (await res.text()).trim();
+                
+                const mRes = await fetch(`${baseUrl}/monitors?key=${encodeURIComponent(SECRET_KEY)}`);
+                const mData = await mRes.json();
+                const select = document.getElementById("monitor-select");
+                
+                if(select.options.length <= 1) {
+                    select.innerHTML = "";
+                    for(let i = 1; i <= mData.count; i++) {
+                        const opt = document.createElement("option");
+                        opt.value = i; opt.innerText = `モニター ${i}`;
+                        if(i === currentMonitor) opt.selected = true;
+                        select.appendChild(opt);
+                    }
+                }
+
+                updateStream();
+            } catch(e) {
+                setTimeout(connect, 3000);
             }
         }
 
-        updateStream();
-        console.log("接続完了:", baseUrl);
-    } catch(e) {
-        console.log("再接続中...");
-        setTimeout(connect, 3000);
-    }
-}
-
-function updateStream() {
-    if(!baseUrl) return;
-    const img = document.getElementById("stream");
-    // ★ここ！映像配信にも入力された SECRET_KEY を正確に付与
-    img.src = `${baseUrl}/video_feed?monitor=${currentMonitor}&key=${encodeURIComponent(SECRET_KEY)}&t=${Date.now()}`;
-}
+        function updateStream() {
+            if(!baseUrl) return;
+            const img = document.getElementById("stream");
+            img.src = `${baseUrl}/video_feed?monitor=${currentMonitor}&key=${encodeURIComponent(SECRET_KEY)}&t=${Date.now()}`;
+        }
 
 function changeMonitor() {
     currentMonitor = parseInt(document.getElementById("monitor-select").value);
