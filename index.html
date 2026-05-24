@@ -5,17 +5,17 @@
 <img id="stream" style="width: 100%; max-width: 800px;">
 
 <script>
-    // GitHubのURL（?nocache=... をつけて強制的に毎回読み直させる）
-    const urlFile = "https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?nocache=" + Math.random();
+    // GitHubのrawURLに、タイムスタンプを秒単位までつけてリクエスト
+    const timestamp = Math.floor(Date.now() / 1000); 
+    const urlFile = `https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?t=${timestamp}`;
     
-    fetch(urlFile, { cache: "no-store" }) // キャッシュを一切させない設定
+    fetch(urlFile, { cache: "reload" }) // キャッシュを無視してリロードする指定
         .then(response => response.text())
         .then(data => {
             const newUrl = data.trim();
-            console.log("読み込んだ最新URL:", newUrl);
+            console.log("現在読み込んだURL:", newUrl);
             document.getElementById("stream").src = newUrl + "/video_feed";
-        })
-        .catch(err => console.error("URL取得失敗:", err));
+        });
 </script>
 </body>
 </html>
