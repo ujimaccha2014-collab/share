@@ -13,25 +13,25 @@
 
     <img id="stream" alt="Connecting...">
 
-<img id="stream" style="width: 100vw; height: 100vh; object-fit: contain; cursor: crosshair;">
-<script>
-    const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/2599566f648c5e8f9e47d61dff7a9cef/raw/url.txt";
+<img id="stream" style="width: 100vw; height: 100vh; object-fit: contain; cursor: crosshair;"
+     onerror="setTimeout(connect, 2000)"> <script>
+    const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/38955fda60dddd6a96b70f198c804272/raw/url.txt";
+    
     async function connect() {
-        const res = await fetch(GIST_RAW + "?t=" + Math.random());
-        const url = (await res.text()).trim();
-        document.getElementById("stream").src = url + "/video_feed";
-        
-        // 操作イベント設定
-        document.addEventListener('keydown', (e) => {
-            fetch(url + "/keyboard", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key:e.key})});
-        });
-        document.getElementById('stream').addEventListener('mousedown', (e) => {
-            const rect = e.target.getBoundingClientRect();
-            fetch(url + "/click", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({x:(e.clientX-rect.left)/rect.width, y:(e.clientY-rect.top)/rect.height})});
-        });
+        try {
+            const res = await fetch(GIST_RAW + "?t=" + Math.random());
+            const url = (await res.text()).trim();
+            const img = document.getElementById("stream");
+            img.src = url + "/video_feed";
+            console.log("接続先:", url);
+        } catch(e) {
+            console.log("URL取得失敗、再試行します...");
+            setTimeout(connect, 3000);
+        }
     }
+    
     connect();
-    setInterval(connect, 5000); // 5秒ごとに最新URLをチェック
+    setInterval(connect, 10000); // 10秒おきに最新URLを確認
 </script>
 </body>
 </html>
