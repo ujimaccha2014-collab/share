@@ -13,9 +13,8 @@
     <img id="stream" alt="Connecting..." onerror="setTimeout(connect, 2000)">
 
     <script>
-        // あなたの新しいGist URL
         const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/38955fda60dddd6a96b70f198c804272/raw/url.txt";
-        let baseUrl = ""; // 取得したURLを保持する変数
+        let baseUrl = ""; 
 
         async function connect() {
             try {
@@ -23,7 +22,6 @@
                 baseUrl = (await res.text()).trim();
                 
                 const img = document.getElementById("stream");
-                // URLが変わったときだけsrcを更新（チラつき防止）
                 if (img.src !== baseUrl + "/video_feed") {
                     img.src = baseUrl + "/video_feed";
                 }
@@ -34,7 +32,7 @@
             }
         }
 
-        // --- キーボード操作送信 ---
+        // キーボード操作
         document.addEventListener('keydown', (e) => {
             if (!baseUrl) return;
             fetch(baseUrl + "/keyboard", {
@@ -47,17 +45,19 @@
                     alt: e.altKey
                 })
             });
-            // ブラウザ側のショートカット（F5やCtrl+Wなど）を無効化したい場合は以下を有効に
-            // e.preventDefault(); 
+            
+            // バックスペースや矢印キーでブラウザが動くのを防止
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Backspace","Tab"].includes(e.key)) {
+                e.preventDefault();
+            }
         });
 
-        // --- マウスクリック送信 ---
+        // マウスクリック
         document.getElementById('stream').addEventListener('mousedown', (e) => {
             if (!baseUrl) return;
             const img = e.target;
             const rect = img.getBoundingClientRect();
             
-            // クリックされた位置を割合（0.0～1.0）で計算
             const data = {
                 x: (e.clientX - rect.left) / rect.width,
                 y: (e.clientY - rect.top) / rect.height
@@ -70,9 +70,7 @@
             });
         });
 
-        // 最初の一歩
         connect();
-        // 10秒おきに最新のURL（再起動対策）を確認
         setInterval(connect, 10000); 
     </script>
 </body>
