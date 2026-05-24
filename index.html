@@ -37,7 +37,8 @@
         let baseUrl = ""; 
         let currentMonitor = 1;
         let isMouseDown = false;
-        let lastMoveTime = 0;
+        let lastHoverTime = 0;
+        const HOVER_INTERVAL = 100; // ★重要: 100ミリ秒に1回だけホバー座標を送信（パンク防止）
 
         async function connect() {
             try {
@@ -48,12 +49,15 @@
                 const mRes = await fetch(baseUrl + "/monitors");
                 const mData = await mRes.json();
                 const select = document.getElementById("monitor-select");
-                select.innerHTML = "";
-                for(let i = 1; i <= mData.count; i++) {
-                    const opt = document.createElement("option");
-                    opt.value = i; opt.innerText = `モニター ${i}`;
-                    if(i === currentMonitor) opt.selected = true;
-                    select.appendChild(opt);
+                
+                if(select.options.length <= 1) {
+                    select.innerHTML = "";
+                    for(let i = 1; i <= mData.count; i++) {
+                        const opt = document.createElement("option");
+                        opt.value = i; opt.innerText = `モニター ${i}`;
+                        if(i === currentMonitor) opt.selected = true;
+                        select.appendChild(opt);
+                    }
                 }
 
                 updateStream();
@@ -75,41 +79,44 @@
             updateStream();
         }
 
-        // --- クリップボード同期処理 ---
+        // クリップボード同期
         async function sendClipboard() {
             const text = document.getElementById("clip-text").value;
             await fetch(baseUrl + "/clipboard", {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ text: text })
             });
-            alert("PCのクリップボードへ送信しました");
+            alert("PCへ送信しました");
         }
 
         async function getClipboard() {
             const res = await fetch(baseUrl + "/clipboard");
             const data = await res.json();
             document.getElementById("clip-text").value = data.text;
-            // ブラウザ自身のクリップボードにもコピーを試みる
             navigator.clipboard.writeText(data.text).catch(() => {});
-            alert("PCのクリップボードから取得しました");
+            alert("PCから取得しました");
         }
 
-        // --- 【強化】マウスドラッグ制御ロジック ---
+        // --- マウスイベント制御ロジック ---
         const img = document.getElementById('stream');
 
         function sendMouseEvent(action, e) {
-            if (!baseUrl) return;
+            if (!baseUrl || !img.complete) return;
             const rect = img.getBoundingClientRect();
+            
             const data = {
                 action: action,
                 monitor: currentMonitor,
                 x: (e.clientX - rect.left) / rect.width,
                 y: (e.clientY - rect.top) / rect.height
             };
+            
+            if (data.x < 0 || data.x > 1 || data.y < 0 || data.y > 1) return;
+
             fetch(baseUrl + "/mouse", {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
-            });
+            }).catch(()=>{});
         }
 
         img.addEventListener('mousedown', (e) => {
@@ -118,13 +125,11 @@
             e.preventDefault();
         });
 
-        // 大量の通信でパンクしないよう、mousemoveは50ミリ秒ごとに間引いて送信
         img.addEventListener('mousemove', (e) => {
-            if (!isMouseDown) return;
             const now = Date.now();
-            if (now - lastMoveTime > 50) { 
+            if (now - lastHoverTime > HOVER_INTERVAL) {
                 sendMouseEvent('move', e);
-                lastMoveTime = now;
+                lastHoverTime = now;
             }
         });
 
@@ -137,11 +142,11 @@
 
         // キーボード操作
         document.addEventListener('keydown', (e) => {
-            if (!baseUrl || document.activeElement.id === 'clip-text') return; // クリップボード入力中は無視
+            if (!baseUrl || document.activeElement.id === 'clip-text') return;
             fetch(baseUrl + "/keyboard", {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey })
-            });
+            }).catch(()=>{});
             if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Backspace","Tab"].includes(e.key)) e.preventDefault();
         });
 
