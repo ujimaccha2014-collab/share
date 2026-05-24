@@ -1,32 +1,20 @@
 <!DOCTYPE html>
 <html>
-<body style="margin:0; background:#000;">
-    <h1 id="status" style="color:white; text-align:center;">接続中...</h1>
-    <img id="stream" style="width:100vw; height:100vh; object-fit:contain; display:none;">
+<body>
+    <h1>ライブ配信中</h1>
+    <img id="stream" style="width: 100%; max-width: 800px;">
+    
+    <script>
+        const URL_FILE = "https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?cache=" + new Date().getTime();
 
-<script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbw2YxZRUc3-jZO7xx9rBvxeSZCdXAI2O6WASDH4o01yQRCGwPXjihL6J3fw1uAzFRku/exec";
-
-    fetch(GAS_URL)
-        .then(res => res.text())
-        .then(url => {
-            // 前後の空白や改行を消す（大事！）
-            const cleanUrl = url.trim(); 
-            const img = document.getElementById("stream");
-            const status = document.getElementById("status");
-
-            if (cleanUrl.startsWith("https://")) {
-                // ここでURLの末尾に結合する
-                img.src = cleanUrl + "/video_feed";
-                img.style.display = "block";
-                status.style.display = "none";
-            } else {
-                status.innerText = "接続先が見つかりません。PCを起動してください。";
-            }
-        })
-        .catch(err => {
-            document.getElementById("status").innerText = "エラーが発生しました: " + err;
-        });
-</script>
+        fetch(URL_FILE)
+            .then(res => res.text())
+            .then(url => {
+                const targetUrl = url.trim();
+                if (targetUrl.startsWith("http")) {
+                    document.getElementById("stream").src = targetUrl + "/video_feed";
+                }
+            });
+    </script>
 </body>
 </html>
