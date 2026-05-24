@@ -4,18 +4,29 @@
     <h1 id="status" style="color:white; text-align:center;">接続中...</h1>
     <img id="stream" style="width:100vw; height:100vh; object-fit:contain; display:none;">
 
-    <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwM9PWK_Q5pC_JdxRi3WECAl4RwLzN-gFWXp3LkkI7Ouvdz90x8JgtjT6mI4RE8D0Be/exec";
-        fetch(GAS_URL)
-            .then(res => res.text())
-            .then(url => {
-                const img = document.getElementById("stream");
-                const status = document.getElementById("status");
-                // 取得したURLに /video_feed をくっつけて表示
-                img.src = url + "/video_feed";
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwM9PWK_Q5pC_JdxRi3WECAl4RwLzN-gFWXp3LkkI7Ouvdz90x8JgtjT6mI4RE8D0Be/exec";
+
+    fetch(GAS_URL)
+        .then(res => res.text())
+        .then(url => {
+            // 前後の空白や改行を消す（大事！）
+            const cleanUrl = url.trim(); 
+            const img = document.getElementById("stream");
+            const status = document.getElementById("status");
+
+            if (cleanUrl.startsWith("https://")) {
+                // ここでURLの末尾に結合する
+                img.src = cleanUrl + "/video_feed";
                 img.style.display = "block";
                 status.style.display = "none";
-            });
-    </script>
+            } else {
+                status.innerText = "接続先が見つかりません。PCを起動してください。";
+            }
+        })
+        .catch(err => {
+            document.getElementById("status").innerText = "エラーが発生しました: " + err;
+        });
+</script>
 </body>
 </html>
