@@ -1,24 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Remote Desktop</title>
+    <style>
+        /* 0. 画面サイズをマックスにする設定 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* スクロールバーを消す */
+            background-color: black;
+        }
+        #stream {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw; /* 画面幅いっぱい */
+            height: 100vh; /* 画面高さいっぱい */
+            object-fit: contain; /* アスペクト比を維持してフィット */
+        }
+    </style>
+</head>
 <body>
-    <h1>ライブ配信中</h1>
-<img id="stream" style="width: 100%; max-width: 800px;">
 
-<script>
-    // GitHubのrawURLに、タイムスタンプを秒単位までつけてリクエスト
-    const timestamp = Math.floor(Date.now() / 1000); 
-    const urlFile = `https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?t=${timestamp}`;
-    
-    fetch(urlFile, { cache: "reload" }) // キャッシュを無視してリロードする指定
-        .then(response => response.text())
-        .then(data => {
-            const newUrl = data.trim();
-            console.log("現在読み込んだURL:", newUrl);
-            document.getElementById("stream").src = newUrl + "/video_feed";
-        });
-    fetch("https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?t=" + Math.random())
-    .then(r => r.text())
-    .then(t => console.log("取得できたURL:", t));
-</script>
+    <img id="stream" alt="Waiting for stream...">
+
+    <script>
+        let serverUrl = ""; // FlaskサーバーのURLを保持する変数
+
+        // --- URL取得処理（ここは前回と同じ） ---
+        const urlFile = "https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?nocache=" + Math.random();
+        fetch(urlFile, { cache: "no-store" })
+            .then(response => response.text())
+            .then(data => {
+                serverUrl = data.trim();
+                document.getElementById("stream").src = serverUrl + "/video_feed";
+                console.log("Connected to:", serverUrl);
+                
+                // サーバーに繋がったら、キーボード入力を監視開始
+                startKeyboardListener();
+            });
+
+        // --- 1. キーボード操作の送信処理 ---
+        function startKeyboardListener() {
+            // ページ全体でキーボードが押された瞬間をキャッチ
+            document.addEventListener('keydown', function(event) {
+                if (!serverUrl) return; // サーバーURLがないときは何もしない
+
+                // サーバーへ送るデータ
+                const keyData = {
+                    key: event.key, // 'a', 'Enter', 'Control' など
+                    code: event.code, // 'KeyA', 'Enter', 'ControlLeft' など
+                    ctrl: event.ctrlKey,
+                    shift: event.shiftKey,
+                    alt: event.altKey,
+                    meta: event.metaKey // WindowsキーやCommandキー
+                };
+
+                console.log("Sending key:", keyData);
+
+                // Flaskサーバーの /keyboard エンドポイントへ送信
+                fetch(serverUrl + "/keyboard", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(keyData)
+                }).catch(err => console.error("Key send error:", err));
+                
+                // ブラウザのデフォルト動作（F5でリロード、Ctrl+Sで保存など）を無効化
+                event.preventDefault();
+            });
+        }
+    </script>
 </body>
 </html>
