@@ -5,17 +5,17 @@
 <img id="stream" style="width: 100%; max-width: 800px;">
 
 <script>
-    // GitHubのrawURLを指定（?cache= でキャッシュを回避）
-    const urlFile = "https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?cache=" + new Date().getTime();
+    // GitHubのURL（?nocache=... をつけて強制的に毎回読み直させる）
+    const urlFile = "https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?nocache=" + Math.random();
     
-    fetch(urlFile)
+    fetch(urlFile, { cache: "no-store" }) // キャッシュを一切させない設定
         .then(response => response.text())
         .then(data => {
             const newUrl = data.trim();
-            console.log("読み込んだURL:", newUrl);
+            console.log("読み込んだ最新URL:", newUrl);
             document.getElementById("stream").src = newUrl + "/video_feed";
         })
-        .catch(err => console.error("URLの取得に失敗:", err));
+        .catch(err => console.error("URL取得失敗:", err));
 </script>
 </body>
 </html>
