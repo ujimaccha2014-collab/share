@@ -1,36 +1,20 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>Connecting to Home PC...</title>
-    <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
-        .message { text-align: center; color: #333; }
-    </style>
-</head>
-<body>
-    <div class="message">
-        <h1>接続中...</h1>
-        <p>自宅のPCへ転送しています。しばらくお待ちください。</p>
-    </div>
+<html>
+<body style="margin:0; background:#000;">
+    <h1 id="status" style="color:white; text-align:center;">接続中...</h1>
+    <img id="stream" style="width:100vw; height:100vh; object-fit:contain; display:none;">
 
     <script>
-        // ここにあなたが作成した「GASのウェブアプリURL」を貼り付けてください
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwM9PWK_Q5pC_JdxRi3WECAl4RwLzN-gFWXp3LkkI7Ouvdz90x8JgtjT6mI4RE8D0Be/exec";
-
+        const GAS_URL = "あなたのGASのURL";
         fetch(GAS_URL)
-            .then(response => response.text())
+            .then(res => res.text())
             .then(url => {
-                if (url && url.startsWith("https://")) {
-                    // 取得したURLへジャンプ
-                    window.location.href = url;
-                } else {
-                    document.body.innerHTML = "<h1>エラー</h1><p>自宅PCが起動していないか、URLの取得に失敗しました。</p>";
-                }
-            })
-            .catch(error => {
-                document.body.innerHTML = "<h1>エラー</h1><p>接続できませんでした。</p>";
-                console.error(error);
+                const img = document.getElementById("stream");
+                const status = document.getElementById("status");
+                // 取得したURLに /video_feed をくっつけて表示
+                img.src = url + "/video_feed";
+                img.style.display = "block";
+                status.style.display = "none";
             });
     </script>
 </body>
