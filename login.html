@@ -1,9 +1,27 @@
-<input type="password" id="key">
-<button onclick="saveKey()">ログイン</button>
-<script>
-    function saveKey() {
-        // 合言葉をURLではなく、ブラウザの記憶領域に保存
-        localStorage.setItem('SECRET_KEY', document.getElementById('key').value);
-        window.location.href = '/'; // 画面に戻る
-    }
-</script>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body { background: #111; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+        input { padding: 10px; width: 300px; }
+        button { padding: 10px 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>Access Code Required</h2>
+        <input type="password" id="key" placeholder="合言葉を入力">
+        <button onclick="login()">Enter</button>
+    </div>
+    <script>
+        function login() {
+            const key = document.getElementById("key").value;
+            // メモリに保存して転送
+            sessionStorage.setItem("SECRET_KEY", key);
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
