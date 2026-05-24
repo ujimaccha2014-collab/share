@@ -16,6 +16,9 @@
             console.log("現在読み込んだURL:", newUrl);
             document.getElementById("stream").src = newUrl + "/video_feed";
         });
+    fetch("https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?t=" + Math.random())
+    .then(r => r.text())
+    .then(t => console.log("取得できたURL:", t));
 </script>
 </body>
 </html>
