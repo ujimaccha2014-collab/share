@@ -13,30 +13,25 @@
 
     <img id="stream" alt="Connecting...">
 
+<img id="stream" style="width: 100vw; height: 100vh; object-fit: contain; cursor: crosshair;">
 <script>
-    // あなたのGistのRaw URL（?t=...を付けてキャッシュを破壊します）
-    const GIST_URL = "https://gist.githubusercontent.com/ujimaccha2014-collab/2599566f648c5e8f9e47d61dff7a9cef/raw/6c68c306ad0096cd6a377e2b7a1f7fc769401527/url.txt";
-
-    function connect() {
-        fetch(GIST_URL + "?nocache=" + new Date().getTime(), {
-            cache: "no-store", // ブラウザにキャッシュさせないは？更新できなかったんだがｗｗｗ
-            headers: {
-                "Pragma": "no-cache",
-                "Cache-Control": "no-cache"
-            }
-        })
-        .then(r => r.text())
-        .then(data => {
-            const url = data.trim();
-            document.getElementById("stream").src = url + "/video_feed";
-            console.log("接続完了:", url);
-        })
-        .catch(err => console.error("接続エラー:", err));
+    const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/2599566f648c5e8f9e47d61dff7a9cef/raw/url.txt";
+    async function connect() {
+        const res = await fetch(GIST_RAW + "?t=" + Math.random());
+        const url = (await res.text()).trim();
+        document.getElementById("stream").src = url + "/video_feed";
+        
+        // 操作イベント設定
+        document.addEventListener('keydown', (e) => {
+            fetch(url + "/keyboard", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key:e.key})});
+        });
+        document.getElementById('stream').addEventListener('mousedown', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            fetch(url + "/click", {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({x:(e.clientX-rect.left)/rect.width, y:(e.clientY-rect.top)/rect.height})});
+        });
     }
-    
-    // ページを開いた時と、3秒おきにURLを再チェックする（これで手動更新不要！）
     connect();
-    setInterval(connect, 3000); 
+    setInterval(connect, 5000); // 5秒ごとに最新URLをチェック
 </script>
 </body>
 </html>
