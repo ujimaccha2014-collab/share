@@ -13,38 +13,30 @@
 
     <img id="stream" alt="Connecting...">
 
-    <script>
-        // ★ここにあなたのGistの「Raw」URLを入れてください
-        const GIST_URL = "https://gist.githubusercontent.com/ujimaccha2014-collab/2599566f648c5e8f9e47d61dff7a9cef/raw/6c68c306ad0096cd6a377e2b7a1f7fc769401527/url.txt";
+<script>
+    // あなたのGistのRaw URL（?t=...を付けてキャッシュを破壊します）
+    const GIST_URL = "https://gist.githubusercontent.com/ujimaccha2014-collab/2599566f648c5e8f9e47d61dff7a9cef/raw/6c68c306ad0096cd6a377e2b7a1f7fc769401527/url.txt";
 
-        function connect() {
-            // キャッシュを強制回避
-            fetch(GIST_URL + "?t=" + Math.random())
-                .then(r => r.text())
-                .then(url => {
-                    const baseUrl = url.trim();
-                    document.getElementById("stream").src = baseUrl + "/video_feed";
-                    console.log("Connected to:", baseUrl);
-                    setupControls(baseUrl);
-                });
-        }
-
-        function setupControls(baseUrl) {
-            // キーボード操作の送信
-            document.addEventListener('keydown', (e) => {
-                fetch(baseUrl + "/keyboard", {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        key: e.key,
-                        ctrl: e.ctrlKey,
-                        shift: e.shiftKey
-                    })
-                });
-            });
-        }
-
-        connect();
-    </script>
+    function connect() {
+        fetch(GIST_URL + "?nocache=" + new Date().getTime(), {
+            cache: "no-store", // ブラウザにキャッシュさせない
+            headers: {
+                "Pragma": "no-cache",
+                "Cache-Control": "no-cache"
+            }
+        })
+        .then(r => r.text())
+        .then(data => {
+            const url = data.trim();
+            document.getElementById("stream").src = url + "/video_feed";
+            console.log("接続完了:", url);
+        })
+        .catch(err => console.error("接続エラー:", err));
+    }
+    
+    // ページを開いた時と、3秒おきにURLを再チェックする（これで手動更新不要！）
+    connect();
+    setInterval(connect, 3000); 
+</script>
 </body>
 </html>
