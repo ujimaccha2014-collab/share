@@ -2,19 +2,20 @@
 <html>
 <body>
     <h1>ライブ配信中</h1>
-    <img id="stream" style="width: 100%; max-width: 800px;">
-    
-    <script>
-        const URL_FILE = "https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?cache=" + new Date().getTime();
+<img id="stream" style="width: 100%; max-width: 800px;">
 
-        fetch(URL_FILE)
-            .then(res => res.text())
-            .then(url => {
-                const targetUrl = url.trim();
-                if (targetUrl.startsWith("http")) {
-                    document.getElementById("stream").src = targetUrl + "/video_feed";
-                }
-            });
-    </script>
+<script>
+    // GitHubのrawURLを指定（?cache= でキャッシュを回避）
+    const urlFile = "https://raw.githubusercontent.com/ujimaccha2014-collab/share/main/url.txt?cache=" + new Date().getTime();
+    
+    fetch(urlFile)
+        .then(response => response.text())
+        .then(data => {
+            const newUrl = data.trim();
+            console.log("読み込んだURL:", newUrl);
+            document.getElementById("stream").src = newUrl + "/video_feed";
+        })
+        .catch(err => console.error("URLの取得に失敗:", err));
+</script>
 </body>
 </html>
