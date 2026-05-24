@@ -33,132 +33,130 @@
     </div>
 
     <script>
-        // ==========================================
-        // ★【重要】Python側と同じ秘密の合言葉を入れてください
-        // ==========================================
-        const SECRET_KEY = "my_secret_desktop_password_999"; 
+// 1. 最初はプロンプトで脳内から直接入力（ソースには1文字も残らない）
+const SECRET_KEY = prompt("秘密の合言葉（パスワード）を入力してください:");
 
-        const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/38955fda60dddd6a96b70f198c804272/raw/url.txt";
-        let baseUrl = ""; 
-        let currentMonitor = 1;
-        let isMouseDown = false;
-        let lastHoverTime = 0;
-        const HOVER_INTERVAL = 100; // 100ミリ秒に1回ホバー座標を送信（パンク防止）
+const GIST_RAW = "https://gist.githubusercontent.com/ujimaccha2014-collab/38955fda60dddd6a96b70f198c804272/raw/url.txt";
+let baseUrl = ""; 
+let currentMonitor = 1;
+let isMouseDown = false;
+let lastHoverTime = 0;
+const HOVER_INTERVAL = 100;
 
-        async function connect() {
-            try {
-                const res = await fetch(GIST_RAW + "?t=" + Math.random());
-                baseUrl = (await res.text()).trim();
-                
-                // モニター数の自動検知（末尾に合言葉を付与）
-                const mRes = await fetch(`${baseUrl}/monitors?key=${SECRET_KEY}`);
-                const mData = await mRes.json();
-                const select = document.getElementById("monitor-select");
-                
-                if(select.options.length <= 1) {
-                    select.innerHTML = "";
-                    for(let i = 1; i <= mData.count; i++) {
-                        const opt = document.createElement("option");
-                        opt.value = i; opt.innerText = `モニター ${i}`;
-                        if(i === currentMonitor) opt.selected = true;
-                        select.appendChild(opt);
-                    }
-                }
-
-                updateStream();
-                console.log("接続完了:", baseUrl);
-            } catch(e) {
-                console.log("再接続中...");
-                setTimeout(connect, 3000);
+async function connect() {
+    try {
+        const res = await fetch(GIST_RAW + "?t=" + Math.random());
+        baseUrl = (await res.text()).trim();
+        
+        // ★ここ！入力された SECRET_KEY を正確に送る
+        const mRes = await fetch(`${baseUrl}/monitors?key=${encodeURIComponent(SECRET_KEY)}`);
+        const mData = await mRes.json();
+        const select = document.getElementById("monitor-select");
+        
+        if(select.options.length <= 1) {
+            select.innerHTML = "";
+            for(let i = 1; i <= mData.count; i++) {
+                const opt = document.createElement("option");
+                opt.value = i; opt.innerText = `モニター ${i}`;
+                if(i === currentMonitor) opt.selected = true;
+                select.appendChild(opt);
             }
         }
 
-        function updateStream() {
-            if(!baseUrl) return;
-            const img = document.getElementById("stream");
-            // 映像配信URLにも合言葉をガッチリ付与
-            img.src = `${baseUrl}/video_feed?monitor=${currentMonitor}&key=${SECRET_KEY}&t=${Date.now()}`;
-        }
+        updateStream();
+        console.log("接続完了:", baseUrl);
+    } catch(e) {
+        console.log("再接続中...");
+        setTimeout(connect, 3000);
+    }
+}
 
-        function changeMonitor() {
-            currentMonitor = parseInt(document.getElementById("monitor-select").value);
-            updateStream();
-        }
+function updateStream() {
+    if(!baseUrl) return;
+    const img = document.getElementById("stream");
+    // ★ここ！映像配信にも入力された SECRET_KEY を正確に付与
+    img.src = `${baseUrl}/video_feed?monitor=${currentMonitor}&key=${encodeURIComponent(SECRET_KEY)}&t=${Date.now()}`;
+}
 
-        // クリップボード同期（末尾に合言葉を付与）
-        async function sendClipboard() {
-            const text = document.getElementById("clip-text").value;
-            await fetch(`${baseUrl}/clipboard?key=${SECRET_KEY}`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ text: text })
+function changeMonitor() {
+    currentMonitor = parseInt(document.getElementById("monitor-select").value);
+    updateStream();
+}
+
+// クリップボード同期
+async function sendClipboard() {
+    const text = document.getElementById("clip-text").value;
+    await fetch(`${baseUrl}/clipboard?key=${encodeURIComponent(SECRET_KEY)}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ text: text })
             });
-            alert("PCへ送信しました");
-        }
+    alert("PCへ送信しました");
+}
 
-        async function getClipboard() {
-            const res = await fetch(`${baseUrl}/clipboard?key=${SECRET_KEY}`);
-            const data = await res.json();
-            document.getElementById("clip-text").value = data.text;
-            navigator.clipboard.writeText(data.text).catch(() => {});
-            alert("PCから取得しました");
-        }
+async function getClipboard() {
+    const res = await fetch(`${baseUrl}/clipboard?key=${encodeURIComponent(SECRET_KEY)}`);
+    const data = await res.json();
+    document.getElementById("clip-text").value = data.text;
+    navigator.clipboard.writeText(data.text).catch(() => {});
+    alert("PCから取得しました");
+}
 
-        // --- マウスイベント制御ロジック ---
-        const img = document.getElementById('stream');
+const img = document.getElementById('stream');
 
-        function sendMouseEvent(action, e) {
-            if (!baseUrl || !img.complete) return;
-            const rect = img.getBoundingClientRect();
-            
-            const data = {
-                action: action,
-                monitor: currentMonitor,
-                x: (e.clientX - rect.left) / rect.width,
-                y: (e.clientY - rect.top) / rect.height
-            };
-            
-            if (data.x < 0 || data.x > 1 || data.y < 0 || data.y > 1) return;
+function sendMouseEvent(action, e) {
+    if (!baseUrl || !img.complete) return;
+    const rect = img.getBoundingClientRect();
+    
+    const data = {
+        action: action,
+        monitor: currentMonitor,
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height
+    };
+    
+    if (data.x < 0 || data.x > 1 || data.y < 0 || data.y > 1) return;
 
-            // マウス操作の通信にもすべて合言葉を付与
-            fetch(`${baseUrl}/mouse?key=${SECRET_KEY}`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            }).catch(()=>{});
-        }
+    // ★ここ！マウス操作にも正確に付与
+    fetch(`${baseUrl}/mouse?key=${encodeURIComponent(SECRET_KEY)}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).catch(()=>{});
+}
 
-        img.addEventListener('mousedown', (e) => {
-            isMouseDown = true;
-            sendMouseEvent('down', e);
-            e.preventDefault();
-        });
+img.addEventListener('mousedown', (e) => {
+    isMouseDown = true;
+    sendMouseEvent('down', e);
+    e.preventDefault();
+});
 
-        img.addEventListener('mousemove', (e) => {
-            const now = Date.now();
-            if (now - lastHoverTime > HOVER_INTERVAL) {
-                sendMouseEvent('move', e);
-                lastHoverTime = now;
-            }
-        });
+img.addEventListener('mousemove', (e) => {
+    const now = Date.now();
+    if (now - lastHoverTime > HOVER_INTERVAL) {
+        sendMouseEvent('move', e);
+        lastHoverTime = now;
+    }
+});
 
-        window.addEventListener('mouseup', (e) => {
-            if (isMouseDown) {
-                isMouseDown = false;
-                sendMouseEvent('up', e);
-            }
-        });
+window.addEventListener('mouseup', (e) => {
+    if (isMouseDown) {
+        isMouseDown = false;
+        sendMouseEvent('up', e);
+    }
+});
 
-        // キーボード操作（末尾に合言葉を付与）
-        document.addEventListener('keydown', (e) => {
-            if (!baseUrl || document.activeElement.id === 'clip-text') return;
-            fetch(`${baseUrl}/keyboard?key=${SECRET_KEY}`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey })
-            }).catch(()=>{});
-            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Backspace","Tab"].includes(e.key)) e.preventDefault();
-        });
+// キーボード操作
+document.addEventListener('keydown', (e) => {
+    if (!baseUrl || document.activeElement.id === 'clip-text') return;
+    // ★ここ！キーボード操作にも正確に付与
+    fetch(`${baseUrl}/keyboard?key=${encodeURIComponent(SECRET_KEY)}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey })
+    }).catch(()=>{});
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Backspace","Tab"].includes(e.key)) e.preventDefault();
+});
 
-        connect();
-        setInterval(connect, 15000); 
+connect();
+setInterval(connect, 15000);
     </script>
 </body>
 </html>
